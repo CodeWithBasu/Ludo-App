@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "817960805175",
+    "firebase_url": "https://ludo-app-eefe1-default-rtdb.firebaseio.com",
+    "project_id": "ludo-app-eefe1",
+    "storage_bucket": "ludo-app-eefe1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:817960805175:android:c05af82b63bdff303bb0b2",
+        "android_client_info": {
+          "package_name": "com.example.ludo_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC4S72UWA6IPOctwK_9EaccjQAoMqZpraA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
