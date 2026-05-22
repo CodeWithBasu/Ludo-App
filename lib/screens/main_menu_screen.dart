@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ludo_app/screens/game_screen.dart';
 
 class MainMenuScreen extends StatelessWidget {
   const MainMenuScreen({super.key});
@@ -42,7 +43,10 @@ class MainMenuScreen extends StatelessWidget {
                 }),
                 const SizedBox(height: 20),
                 _buildMenuButton(context, 'Pass & Play', Icons.people, () {
-                  // Navigate to local multiplayer
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const GameScreen()),
+                  );
                 }),
                 const SizedBox(height: 20),
                 _buildMenuButton(context, 'Play Online', Icons.public, () {
