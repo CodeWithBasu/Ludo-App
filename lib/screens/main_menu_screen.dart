@@ -279,24 +279,29 @@ class _MainMenuScreenState extends State<MainMenuScreen> with SingleTickerProvid
   Widget _buildLogoArea() {
     return Column(
       children: [
-        const Icon(Icons.workspace_premium, color: Colors.amber, size: 80, shadows: [Shadow(color: Colors.white54, blurRadius: 20)]),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildLogoLetter('L', Colors.pinkAccent),
-            _buildLogoLetter('U', Colors.lightBlueAccent),
-            _buildLogoLetter('D', Colors.greenAccent),
-            _buildLogoLetter('O', Colors.amber),
-          ],
+        Container(
+          width: 150,
+          height: 150,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: const [
+              BoxShadow(color: Colors.black45, blurRadius: 20, offset: Offset(0, 10)),
+              BoxShadow(color: Colors.purpleAccent, blurRadius: 30),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(30),
+            child: Image.asset('assets/icon.png', fit: BoxFit.cover),
+          ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 16),
         Text(
-          'MASTER',
+          'LUDO MASTER',
           style: TextStyle(
             color: Colors.white,
             fontSize: 28,
             fontWeight: FontWeight.w900,
-            letterSpacing: 6,
+            letterSpacing: 4,
             shadows: [
               Shadow(color: Colors.black.withOpacity(0.5), blurRadius: 10, offset: const Offset(0, 4)),
               const Shadow(color: Colors.purpleAccent, blurRadius: 20),
@@ -304,29 +309,6 @@ class _MainMenuScreenState extends State<MainMenuScreen> with SingleTickerProvid
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildLogoLetter(String letter, Color color) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 6),
-      width: 55,
-      height: 55,
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
-        shape: BoxShape.circle,
-        border: Border.all(color: color, width: 4),
-        boxShadow: [
-          BoxShadow(color: color.withOpacity(0.6), blurRadius: 15),
-          const BoxShadow(color: Colors.black26, blurRadius: 5, offset: Offset(0, 5)),
-        ],
-      ),
-      child: Center(
-        child: Text(
-          letter,
-          style: TextStyle(color: color, fontSize: 32, fontWeight: FontWeight.bold),
-        ),
-      ),
     );
   }
 
