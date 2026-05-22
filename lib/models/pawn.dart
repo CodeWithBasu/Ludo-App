@@ -26,4 +26,20 @@ class Pawn {
     position = -1;
     state = PawnState.atBase;
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'color': color.name,
+    'position': position,
+    'state': state.name,
+  };
+
+  factory Pawn.fromJson(Map<String, dynamic> json) {
+    return Pawn(
+      id: json['id'],
+      color: PlayerColor.values.firstWhere((e) => e.name == json['color']),
+      position: json['position'],
+      state: PawnState.values.firstWhere((e) => e.name == json['state']),
+    );
+  }
 }

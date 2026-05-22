@@ -10,9 +10,21 @@ import 'package:ludo_app/widgets/board_widget.dart';
 import 'package:ludo_app/widgets/pawn_widget.dart';
 import 'package:ludo_app/widgets/dice_widget.dart';
 
+import 'package:ludo_app/services/firebase_service.dart';
+
 class GameScreen extends StatefulWidget {
   final bool isSinglePlayer;
-  const GameScreen({super.key, this.isSinglePlayer = false});
+  final bool isOnline;
+  final String? roomCode;
+  final bool isHost;
+
+  const GameScreen({
+    super.key, 
+    this.isSinglePlayer = false,
+    this.isOnline = false,
+    this.roomCode,
+    this.isHost = true,
+  });
 
   @override
   State<GameScreen> createState() => _GameScreenState();
@@ -25,11 +37,37 @@ class _GameScreenState extends State<GameScreen> {
   // We need a GlobalKey to access the DiceWidget state to trigger its animation programmatically
   final GlobalKey<DiceWidgetState> _diceKey = GlobalKey<DiceWidgetState>();
 
+  StreamSubscription? _gameStateSubscription;
+
   @override
   void initState() {
     super.initState();
     _gameState = GameState.initial(isSinglePlayer: widget.isSinglePlayer);
-    _checkAITurn();
+    
+    if (widget.isOnline && widget.roomCode != null) {
+      _gameStateSubscription = FirebaseService.listenToGameState(widget.roomCode!).listen((state) {
+        if (state != null && mounted) {
+          setState(() {
+            _gameState = state;
+          });
+        }
+      });
+    } else {
+      _checkAITurn();
+    }
+  }
+
+  @override
+  void dispose() {
+    _gameStateSubscription?.cancel();
+    super.dispose();
+  }
+
+  bool get _isMyTurn {
+    if (!widget.isOnline) return true; // Local play, anyone can tap
+    if (widget.isHost && _gameState.currentTurn == PlayerColor.red) return true;
+    if (!widget.isHost && _gameState.currentTurn == PlayerColor.green) return true;
+    return false;
   }
 
   void _checkAITurn() {
@@ -89,9 +127,15 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _rollDice() {
+    if (!_isMyTurn) return;
+
     setState(() {
       GameLogic.rollDice(_gameState);
     });
+    
+    if (widget.isOnline) {
+      FirebaseService.updateGameState(widget.roomCode!, _gameState);
+    }
     // Check if AI needs to move (though mostly human triggers this)
     // Wait, AI will trigger this via diceKey.
     if (_gameState.players.firstWhere((p) => p.color == _gameState.currentTurn).isComputer) {
@@ -106,7 +150,10 @@ class _GameScreenState extends State<GameScreen> {
             setState(() {
               GameLogic.nextTurn(_gameState);
             });
-            _checkAITurn();
+            if (widget.isOnline) {
+              FirebaseService.updateGameState(widget.roomCode!, _gameState);
+            }
+            if (!widget.isOnline) _checkAITurn();
           }
         });
       }
@@ -114,12 +161,17 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _onPawnTapped(Pawn pawn) {
-    if (_isAITurning) return; // Ignore taps during AI turn
+    if (_isAITurning || !_isMyTurn) return; 
     
     setState(() {
       GameLogic.movePawn(_gameState, pawn);
     });
-    _checkAITurn();
+    
+    if (widget.isOnline) {
+      FirebaseService.updateGameState(widget.roomCode!, _gameState);
+    } else {
+      _checkAITurn();
+    }
   }
 
   @override
@@ -127,7 +179,7 @@ class _GameScreenState extends State<GameScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFE8EAF6),
       appBar: AppBar(
-        title: const Text('Pass & Play'),
+        title: Text(widget.isOnline ? 'Online Match: ${widget.roomCode}' : 'Pass & Play'),
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
       ),
@@ -259,13 +311,13 @@ class _GameScreenState extends State<GameScreen> {
             enabled: !_gameState.diceRolled,
           ),
           ElevatedButton(
-            onPressed: _gameState.diceRolled ? null : _rollDice,
+            onPressed: (_gameState.diceRolled || !_isMyTurn) ? null : _rollDice,
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
               backgroundColor: _getColor(_gameState.currentTurn),
               foregroundColor: Colors.white,
             ),
-            child: const Text('ROLL DICE', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            child: Text(_isMyTurn ? 'ROLL DICE' : 'WAIT', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           ),
         ],
       ),

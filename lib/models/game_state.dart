@@ -43,4 +43,32 @@ class GameState {
       currentTurn: PlayerColor.red,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'players': players.map((p) => p.toJson()).toList(),
+      'pawns': pawns.map((key, value) => MapEntry(key.name, value.map((p) => p.toJson()).toList())),
+      'currentTurn': currentTurn.name,
+      'diceValue': diceValue,
+      'diceRolled': diceRolled,
+    };
+  }
+
+  factory GameState.fromJson(Map<dynamic, dynamic> json) {
+    var playersList = (json['players'] as List).map((p) => Player.fromJson(Map<String, dynamic>.from(p))).toList();
+    
+    Map<PlayerColor, List<Pawn>> pawnsMap = {};
+    (json['pawns'] as Map).forEach((key, value) {
+      PlayerColor color = PlayerColor.values.firstWhere((e) => e.name == key);
+      pawnsMap[color] = (value as List).map((p) => Pawn.fromJson(Map<String, dynamic>.from(p))).toList();
+    });
+
+    return GameState(
+      players: playersList,
+      pawns: pawnsMap,
+      currentTurn: PlayerColor.values.firstWhere((e) => e.name == json['currentTurn']),
+      diceValue: json['diceValue'] ?? 1,
+      diceRolled: json['diceRolled'] ?? false,
+    );
+  }
 }

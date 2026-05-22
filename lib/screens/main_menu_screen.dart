@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ludo_app/screens/game_screen.dart';
+import 'package:ludo_app/screens/lobby_screen.dart';
 import 'dart:math';
 
 class MainMenuScreen extends StatelessWidget {
@@ -209,7 +210,12 @@ class MainMenuScreen extends StatelessWidget {
                   title: 'PLAY ONLINE',
                   icon: Icons.language,
                   subtitle: 'Players: 113,392',
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const LobbyScreen()),
+                    );
+                  },
                 ),
               ),
               const SizedBox(width: 16),
