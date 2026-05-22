@@ -6,6 +6,7 @@ import 'package:ludo_app/logic/game_logic.dart';
 import 'package:ludo_app/logic/path_coordinates.dart';
 import 'package:ludo_app/widgets/board_widget.dart';
 import 'package:ludo_app/widgets/pawn_widget.dart';
+import 'package:ludo_app/widgets/dice_widget.dart';
 
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
@@ -164,27 +165,11 @@ class _GameScreenState extends State<GameScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.black26, width: 2),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 4,
-                  offset: Offset(2, 2),
-                )
-              ],
-            ),
-            child: Center(
-              child: Text(
-                '${_gameState.diceValue}',
-                style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
-              ),
-            ),
+          DiceWidget(
+            value: _gameState.diceValue,
+            onRoll: _rollDice,
+            color: _getColor(_gameState.currentTurn),
+            enabled: !_gameState.diceRolled,
           ),
           ElevatedButton(
             onPressed: _gameState.diceRolled ? null : _rollDice,
