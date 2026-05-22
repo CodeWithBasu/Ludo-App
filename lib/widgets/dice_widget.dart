@@ -16,10 +16,10 @@ class DiceWidget extends StatefulWidget {
   });
 
   @override
-  State<DiceWidget> createState() => _DiceWidgetState();
+  State<DiceWidget> createState() => DiceWidgetState();
 }
 
-class _DiceWidgetState extends State<DiceWidget> with SingleTickerProviderStateMixin {
+class DiceWidgetState extends State<DiceWidget> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   
   @override

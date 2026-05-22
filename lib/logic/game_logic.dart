@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:ludo_app/models/game_state.dart';
 import 'package:ludo_app/models/player.dart';
+import 'package:ludo_app/models/pawn.dart';
 
 class GameLogic {
   static final Random _random = Random();
