@@ -177,46 +177,81 @@ class _GameScreenState extends State<GameScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE8EAF6),
-      appBar: AppBar(
-        title: Text(widget.isOnline ? 'Online Match: ${widget.roomCode}' : 'Pass & Play'),
-        backgroundColor: Colors.indigo,
-        foregroundColor: Colors.white,
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildPlayerInfo(),
-            Expanded(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      // Calculate the square size for the board
-                      double boardSize = constraints.maxWidth < constraints.maxHeight
-                          ? constraints.maxWidth
-                          : constraints.maxHeight;
-                      double cellSize = boardSize / 15;
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF00C9FF), Color(0xFF92FE9D)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              _buildAppBar(),
+              _buildPlayerInfo(),
+              Expanded(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        double boardSize = constraints.maxWidth < constraints.maxHeight
+                            ? constraints.maxWidth
+                            : constraints.maxHeight;
+                        double cellSize = boardSize / 15;
 
-                      return SizedBox(
-                        width: boardSize,
-                        height: boardSize,
-                        child: Stack(
-                          children: [
-                            const BoardWidget(),
-                            ..._buildPawns(boardSize, cellSize),
-                          ],
-                        ),
-                      );
-                    },
+                        return Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(32),
+                            border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
+                            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 20)],
+                          ),
+                          child: SizedBox(
+                            width: boardSize,
+                            height: boardSize,
+                            child: Stack(
+                              children: [
+                                const BoardWidget(),
+                                ..._buildPawns(boardSize, cellSize),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
-            ),
-            _buildDiceSection(),
-          ],
+              _buildDiceSection(),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildAppBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.2),
+        border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.2))),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            widget.isOnline ? 'ROOM: ${widget.roomCode}' : 'PASS & PLAY',
+            style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 2),
+          ),
+        ],
       ),
     );
   }
@@ -274,21 +309,35 @@ class _GameScreenState extends State<GameScreen> {
 
   Widget _buildPlayerInfo() {
     return Container(
-      padding: const EdgeInsets.all(16.0),
-      color: Colors.white,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(12.0),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.5), width: 1.5),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Text(
-            'Current Turn: ',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            'CURRENT TURN: ',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1),
           ),
-          Text(
-            _gameState.currentTurn.name.toUpperCase(),
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
               color: _getColor(_gameState.currentTurn),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+            ),
+            child: Text(
+              _gameState.currentTurn.name.toUpperCase(),
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: 1,
+              ),
             ),
           ),
         ],
@@ -298,8 +347,13 @@ class _GameScreenState extends State<GameScreen> {
 
   Widget _buildDiceSection() {
     return Container(
-      padding: const EdgeInsets.all(24.0),
-      color: Colors.white,
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20.0),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
@@ -310,14 +364,27 @@ class _GameScreenState extends State<GameScreen> {
             color: _getColor(_gameState.currentTurn),
             enabled: !_gameState.diceRolled,
           ),
-          ElevatedButton(
-            onPressed: (_gameState.diceRolled || !_isMyTurn) ? null : _rollDice,
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
-              backgroundColor: _getColor(_gameState.currentTurn),
-              foregroundColor: Colors.white,
+          Container(
+            decoration: BoxDecoration(
+              boxShadow: [
+                BoxShadow(
+                  color: _getColor(_gameState.currentTurn).withOpacity(0.4),
+                  blurRadius: 15,
+                  offset: const Offset(0, 8),
+                )
+              ],
             ),
-            child: Text(_isMyTurn ? 'ROLL DICE' : 'WAIT', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            child: ElevatedButton(
+              onPressed: (_gameState.diceRolled || !_isMyTurn) ? null : _rollDice,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                backgroundColor: _getColor(_gameState.currentTurn),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                elevation: 0, // handeled by container shadow
+              ),
+              child: Text(_isMyTurn ? 'ROLL DICE' : 'WAIT', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 1)),
+            ),
           ),
         ],
       ),

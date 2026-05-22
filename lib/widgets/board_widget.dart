@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' as ui;
 
 class BoardWidget extends StatelessWidget {
   const BoardWidget({super.key});
@@ -10,17 +11,25 @@ class BoardWidget extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          border: Border.all(color: Colors.black, width: 2),
-          boxShadow: const [
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
             BoxShadow(
-              color: Colors.black26,
-              blurRadius: 10,
-              offset: Offset(0, 5),
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+            const BoxShadow(
+              color: Colors.white,
+              blurRadius: 2,
+              offset: Offset(-2, -2),
             ),
           ],
         ),
-        child: CustomPaint(
-          painter: BoardPainter(),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: CustomPaint(
+            painter: BoardPainter(),
+          ),
         ),
       ),
     );
@@ -28,148 +37,159 @@ class BoardWidget extends StatelessWidget {
 }
 
 class BoardPainter extends CustomPainter {
-  final Paint _borderPaint = Paint()
-    ..color = Colors.black
-    ..style = PaintingStyle.stroke
-    ..strokeWidth = 1.0;
+  final Color redBase = const Color(0xFFD32F2F);
+  final Color greenBase = const Color(0xFF388E3C);
+  final Color yellowBase = const Color(0xFFFBC02D);
+  final Color blueBase = const Color(0xFF1976D2);
+  final Color emptyCell = const Color(0xFFF0F2F5);
 
-  final Paint _redPaint = Paint()..color = const Color(0xFFF44336);
-  final Paint _greenPaint = Paint()..color = const Color(0xFF4CAF50);
-  final Paint _yellowPaint = Paint()..color = const Color(0xFFFFEB3B);
-  final Paint _bluePaint = Paint()..color = const Color(0xFF2196F3);
-  final Paint _whitePaint = Paint()..color = Colors.white;
+  void _drawGlossyRect(Canvas canvas, Rect rect, Color color, {bool isBase = false}) {
+    // Drop shadow (inner or outer depending on style, here just simple background)
+    final RRect rrect = RRect.fromRectAndRadius(rect, Radius.circular(isBase ? 20 : 6));
+
+    // Base Gradient
+    final Paint gradientPaint = Paint()
+      ..shader = ui.Gradient.linear(
+        rect.topLeft,
+        rect.bottomRight,
+        [color.withOpacity(0.8), color],
+      );
+    canvas.drawRRect(rrect, gradientPaint);
+
+    // Inner glossy highlight
+    final Paint highlight = Paint()
+      ..shader = ui.Gradient.linear(
+        rect.topLeft,
+        rect.bottomRight,
+        [Colors.white.withOpacity(0.6), Colors.transparent],
+      )
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    canvas.drawRRect(rrect, highlight);
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
     double cellSize = size.width / 15;
 
-    // Draw the base areas (6x6)
-    _drawBase(canvas, 0, 0, cellSize, _redPaint);
-    _drawBase(canvas, 9 * cellSize, 0, cellSize, _greenPaint);
-    _drawBase(canvas, 0, 9 * cellSize, cellSize, _bluePaint);
-    _drawBase(canvas, 9 * cellSize, 9 * cellSize, cellSize, _yellowPaint);
+    // Draw grid background (empty cells)
+    for (int i = 0; i < 15; i++) {
+      for (int j = 0; j < 15; j++) {
+        _drawGlossyRect(
+          canvas,
+          Rect.fromLTWH(j * cellSize, i * cellSize, cellSize, cellSize).deflate(1.5),
+          emptyCell,
+        );
+      }
+    }
 
-    // Draw the home area in the center (3x3)
+    // Draw Bases
+    _drawBase(canvas, 0, 0, cellSize, redBase);
+    _drawBase(canvas, 9 * cellSize, 0, cellSize, greenBase);
+    _drawBase(canvas, 0, 9 * cellSize, cellSize, blueBase);
+    _drawBase(canvas, 9 * cellSize, 9 * cellSize, cellSize, yellowBase);
+
+    // Draw Home
     _drawHome(canvas, 6 * cellSize, 6 * cellSize, cellSize * 3);
 
-    // Draw the vertical paths (top and bottom)
-    _drawVerticalPath(canvas, 6 * cellSize, 0, cellSize, _greenPaint); // Top path
-    _drawVerticalPath(canvas, 6 * cellSize, 9 * cellSize, cellSize, _bluePaint); // Bottom path
-
-    // Draw the horizontal paths (left and right)
-    _drawHorizontalPath(canvas, 0, 6 * cellSize, cellSize, _redPaint); // Left path
-    _drawHorizontalPath(canvas, 9 * cellSize, 6 * cellSize, cellSize, _yellowPaint); // Right path
+    // Draw colored paths
+    _drawVerticalPath(canvas, 6 * cellSize, 0, cellSize, greenBase); // Top
+    _drawVerticalPath(canvas, 6 * cellSize, 9 * cellSize, cellSize, blueBase); // Bottom
+    _drawHorizontalPath(canvas, 0, 6 * cellSize, cellSize, redBase); // Left
+    _drawHorizontalPath(canvas, 9 * cellSize, 6 * cellSize, cellSize, yellowBase); // Right
   }
 
-  void _drawBase(Canvas canvas, double dx, double dy, double cellSize, Paint colorPaint) {
-    // Background color
-    canvas.drawRect(Rect.fromLTWH(dx, dy, cellSize * 6, cellSize * 6), colorPaint);
-    canvas.drawRect(Rect.fromLTWH(dx, dy, cellSize * 6, cellSize * 6), _borderPaint);
+  void _drawBase(Canvas canvas, double dx, double dy, double cellSize, Color color) {
+    Rect baseRect = Rect.fromLTWH(dx, dy, cellSize * 6, cellSize * 6).deflate(2);
+    _drawGlossyRect(canvas, baseRect, color, isBase: true);
+
+    // Inner white container
+    Rect innerRect = Rect.fromLTWH(dx + cellSize, dy + cellSize, cellSize * 4, cellSize * 4).deflate(2);
+    _drawGlossyRect(canvas, innerRect, Colors.white, isBase: true);
+
+    // 4 spawn spots
+    _drawSpawnCircle(canvas, dx + cellSize * 1.5, dy + cellSize * 1.5, cellSize, color);
+    _drawSpawnCircle(canvas, dx + cellSize * 3.5, dy + cellSize * 1.5, cellSize, color);
+    _drawSpawnCircle(canvas, dx + cellSize * 1.5, dy + cellSize * 3.5, cellSize, color);
+    _drawSpawnCircle(canvas, dx + cellSize * 3.5, dy + cellSize * 3.5, cellSize, color);
+  }
+
+  void _drawSpawnCircle(Canvas canvas, double cx, double cy, double cellSize, Color color) {
+    Rect rect = Rect.fromLTWH(cx, cy, cellSize, cellSize).deflate(2);
     
-    // Inner white box
-    canvas.drawRect(Rect.fromLTWH(dx + cellSize, dy + cellSize, cellSize * 4, cellSize * 4), _whitePaint);
-    canvas.drawRect(Rect.fromLTWH(dx + cellSize, dy + cellSize, cellSize * 4, cellSize * 4), _borderPaint);
-
-    // 4 spawn circles
-    _drawSpawnCircle(canvas, dx + cellSize * 1.5, dy + cellSize * 1.5, cellSize, colorPaint);
-    _drawSpawnCircle(canvas, dx + cellSize * 3.5, dy + cellSize * 1.5, cellSize, colorPaint);
-    _drawSpawnCircle(canvas, dx + cellSize * 1.5, dy + cellSize * 3.5, cellSize, colorPaint);
-    _drawSpawnCircle(canvas, dx + cellSize * 3.5, dy + cellSize * 3.5, cellSize, colorPaint);
-  }
-
-  void _drawSpawnCircle(Canvas canvas, double cx, double cy, double cellSize, Paint colorPaint) {
-    // Add white background for the circle to pop
-    canvas.drawRect(Rect.fromLTWH(cx, cy, cellSize, cellSize), _whitePaint);
-    canvas.drawRect(Rect.fromLTWH(cx, cy, cellSize, cellSize), _borderPaint);
-    canvas.drawCircle(Offset(cx + cellSize / 2, cy + cellSize / 2), cellSize / 2 - 2, colorPaint);
-    canvas.drawCircle(Offset(cx + cellSize / 2, cy + cellSize / 2), cellSize / 2 - 2, _borderPaint);
+    // Inset shadow look for spawn points
+    canvas.drawOval(rect, Paint()..color = Colors.grey.shade300);
+    
+    // Draw the colored center
+    Rect inner = rect.deflate(cellSize * 0.15);
+    canvas.drawOval(
+      inner,
+      Paint()
+        ..shader = ui.Gradient.radial(
+          inner.center,
+          inner.width / 2,
+          [color.withOpacity(0.5), color],
+        ),
+    );
   }
 
   void _drawHome(Canvas canvas, double dx, double dy, double size) {
     Path path = Path();
     
-    // Top triangle (Green)
+    // Top (Green)
     path.moveTo(dx, dy);
     path.lineTo(dx + size, dy);
     path.lineTo(dx + size / 2, dy + size / 2);
     path.close();
-    canvas.drawPath(path, _greenPaint);
-    canvas.drawPath(path, _borderPaint);
+    canvas.drawPath(path, Paint()..shader = ui.Gradient.linear(Offset(dx, dy), Offset(dx + size/2, dy + size/2), [greenBase, Colors.green.shade900]));
 
-    // Right triangle (Yellow)
+    // Right (Yellow)
     path = Path();
     path.moveTo(dx + size, dy);
     path.lineTo(dx + size, dy + size);
     path.lineTo(dx + size / 2, dy + size / 2);
     path.close();
-    canvas.drawPath(path, _yellowPaint);
-    canvas.drawPath(path, _borderPaint);
+    canvas.drawPath(path, Paint()..shader = ui.Gradient.linear(Offset(dx+size, dy), Offset(dx + size/2, dy + size/2), [yellowBase, Colors.amber.shade900]));
 
-    // Bottom triangle (Blue)
+    // Bottom (Blue)
     path = Path();
     path.moveTo(dx, dy + size);
     path.lineTo(dx + size, dy + size);
     path.lineTo(dx + size / 2, dy + size / 2);
     path.close();
-    canvas.drawPath(path, _bluePaint);
-    canvas.drawPath(path, _borderPaint);
+    canvas.drawPath(path, Paint()..shader = ui.Gradient.linear(Offset(dx, dy+size), Offset(dx + size/2, dy + size/2), [blueBase, Colors.blue.shade900]));
 
-    // Left triangle (Red)
+    // Left (Red)
     path = Path();
     path.moveTo(dx, dy);
     path.lineTo(dx, dy + size);
     path.lineTo(dx + size / 2, dy + size / 2);
     path.close();
-    canvas.drawPath(path, _redPaint);
-    canvas.drawPath(path, _borderPaint);
+    canvas.drawPath(path, Paint()..shader = ui.Gradient.linear(Offset(dx, dy), Offset(dx + size/2, dy + size/2), [redBase, Colors.red.shade900]));
   }
 
-  void _drawVerticalPath(Canvas canvas, double dx, double dy, double cellSize, Paint homeColor) {
+  void _drawVerticalPath(Canvas canvas, double dx, double dy, double cellSize, Color color) {
     for (int i = 0; i < 6; i++) {
       for (int j = 0; j < 3; j++) {
-        Rect rect = Rect.fromLTWH(dx + j * cellSize, dy + i * cellSize, cellSize, cellSize);
-        
-        // Color the home stretch
+        Rect rect = Rect.fromLTWH(dx + j * cellSize, dy + i * cellSize, cellSize, cellSize).deflate(1.5);
         if (j == 1 && i != 0 && i != 5) {
-          canvas.drawRect(rect, homeColor);
-        } else {
-          canvas.drawRect(rect, _whitePaint);
+          _drawGlossyRect(canvas, rect, color);
+        } else if ((color == greenBase && j == 2 && i == 1) || (color == blueBase && j == 0 && i == 4)) {
+          _drawGlossyRect(canvas, rect, color);
         }
-        
-        // Draw starting arrows / colors (simplified as safe spots)
-        // Adjust for specific colors depending on top/bottom
-        if ((homeColor == _greenPaint && j == 2 && i == 1) || 
-            (homeColor == _bluePaint && j == 0 && i == 4)) {
-          canvas.drawRect(rect, homeColor);
-        }
-
-        canvas.drawRect(rect, _borderPaint);
       }
     }
   }
 
-  void _drawHorizontalPath(Canvas canvas, double dx, double dy, double cellSize, Paint homeColor) {
+  void _drawHorizontalPath(Canvas canvas, double dx, double dy, double cellSize, Color color) {
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < 6; j++) {
-        Rect rect = Rect.fromLTWH(dx + j * cellSize, dy + i * cellSize, cellSize, cellSize);
-        
-        // Color the home stretch
+        Rect rect = Rect.fromLTWH(dx + j * cellSize, dy + i * cellSize, cellSize, cellSize).deflate(1.5);
         if (i == 1 && j != 0 && j != 5) {
-          canvas.drawRect(rect, homeColor);
-        } else {
-          canvas.drawRect(rect, _whitePaint);
+          _drawGlossyRect(canvas, rect, color);
+        } else if ((color == redBase && i == 0 && j == 1) || (color == yellowBase && i == 2 && j == 4)) {
+          _drawGlossyRect(canvas, rect, color);
         }
-
-        // Draw starting arrows / colors
-        if ((homeColor == _redPaint && i == 1 && j == 1) || 
-            (homeColor == _yellowPaint && i == 1 && j == 4)) {
-           // We'll just draw the starting box color for now
-        } else if ((homeColor == _redPaint && i == 0 && j == 1) || 
-                   (homeColor == _yellowPaint && i == 2 && j == 4)) {
-          canvas.drawRect(rect, homeColor);
-        }
-
-        canvas.drawRect(rect, _borderPaint);
       }
     }
   }

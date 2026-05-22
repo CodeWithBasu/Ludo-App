@@ -1,30 +1,56 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:ludo_app/screens/game_screen.dart';
 import 'package:ludo_app/screens/lobby_screen.dart';
-import 'dart:math';
 
-class MainMenuScreen extends StatelessWidget {
+class MainMenuScreen extends StatefulWidget {
   const MainMenuScreen({super.key});
+
+  @override
+  State<MainMenuScreen> createState() => _MainMenuScreenState();
+}
+
+class _MainMenuScreenState extends State<MainMenuScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(vsync: this, duration: const Duration(seconds: 10))..repeat();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          // Background Gradient
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF0D256C), Color(0xFF061440)],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
+          // Vibrant Animated Gradient Background
+          AnimatedBuilder(
+            animation: _animController,
+            builder: (context, child) {
+              return Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: const [Color(0xFF8E2DE2), Color(0xFF4A00E0), Color(0xFF00C9FF), Color(0xFF92FE9D)],
+                    stops: const [0.0, 0.4, 0.8, 1.0],
+                    begin: Alignment(0, -1 + 2 * _animController.value),
+                    end: Alignment(0, 1 + 2 * _animController.value),
+                  ),
+                ),
+              );
+            },
           ),
-          // Background Pattern
+          // Glass overlay
           Positioned.fill(
-            child: CustomPaint(
-              painter: BackgroundPatternPainter(),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: Container(color: Colors.white.withOpacity(0.1)),
             ),
           ),
           SafeArea(
@@ -59,7 +85,7 @@ class MainMenuScreen extends StatelessWidget {
 
   Widget _buildTopBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Row(
         children: [
           // Profile Icon
@@ -67,19 +93,18 @@ class MainMenuScreen extends StatelessWidget {
             width: 50,
             height: 50,
             decoration: BoxDecoration(
-              color: Colors.blue.shade800,
-              border: Border.all(color: Colors.yellow, width: 2),
-              borderRadius: BorderRadius.circular(8),
+              color: Colors.white.withOpacity(0.2),
+              border: Border.all(color: Colors.white, width: 2),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 8)],
             ),
             child: const Icon(Icons.person, color: Colors.white, size: 36),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           const Icon(Icons.settings, color: Colors.white, size: 32),
           const Spacer(),
-          // Gems
           _buildCurrencyPill(Icons.diamond, Colors.lightBlueAccent, '50'),
           const SizedBox(width: 8),
-          // Coins
           _buildCurrencyPill(Icons.monetization_on, Colors.amber, '2,250'),
         ],
       ),
@@ -88,31 +113,25 @@ class MainMenuScreen extends StatelessWidget {
 
   Widget _buildCurrencyPill(IconData icon, Color iconColor, String amount) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFF0A1950),
-        border: Border.all(color: Colors.blue.shade900, width: 2),
+        color: Colors.black.withOpacity(0.3),
+        border: Border.all(color: Colors.white.withOpacity(0.5), width: 1.5),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         children: [
-          Icon(icon, color: iconColor, size: 24),
-          const SizedBox(width: 4),
+          Icon(icon, color: iconColor, size: 20),
+          const SizedBox(width: 6),
           Text(
             amount,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 10),
           Container(
-            decoration: const BoxDecoration(
-              color: Colors.green,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.add, color: Colors.white, size: 18),
+            padding: const EdgeInsets.all(2),
+            decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+            child: const Icon(Icons.add, color: Colors.white, size: 14),
           ),
         ],
       ),
@@ -122,51 +141,27 @@ class MainMenuScreen extends StatelessWidget {
   Widget _buildLogoArea() {
     return Column(
       children: [
-        // Crown
-        const Icon(Icons.workspace_premium, color: Colors.amber, size: 64),
-        // LUDO letters
+        const Icon(Icons.workspace_premium, color: Colors.amber, size: 80, shadows: [Shadow(color: Colors.white54, blurRadius: 20)]),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildLogoLetter('L', Colors.blue),
-            _buildLogoLetter('U', Colors.red),
-            _buildLogoLetter('D', Colors.green),
-            _buildLogoLetter('O', Colors.yellow),
+            _buildLogoLetter('L', Colors.pinkAccent),
+            _buildLogoLetter('U', Colors.lightBlueAccent),
+            _buildLogoLetter('D', Colors.greenAccent),
+            _buildLogoLetter('O', Colors.amber),
           ],
         ),
         const SizedBox(height: 8),
-        // KING text
-        const Text(
+        Text(
           'MASTER',
           style: TextStyle(
-            color: Colors.amber,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 2,
-            shadows: [Shadow(color: Colors.black54, blurRadius: 4, offset: Offset(2, 2))],
-          ),
-        ),
-        const SizedBox(height: 10),
-        // Simple Board Graphic Representation
-        Container(
-          width: 150,
-          height: 100,
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.9),
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 10)],
-          ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Just a simple visual to mimic the 3D board
-              Row(
-                children: [
-                  Expanded(child: Container(color: Colors.red.withOpacity(0.8))),
-                  Expanded(child: Container(color: Colors.green.withOpacity(0.8))),
-                ],
-              ),
-              const Icon(Icons.casino, size: 48, color: Colors.black87),
+            color: Colors.white,
+            fontSize: 28,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 6,
+            shadows: [
+              Shadow(color: Colors.black.withOpacity(0.5), blurRadius: 10, offset: const Offset(0, 4)),
+              const Shadow(color: Colors.purpleAccent, blurRadius: 20),
             ],
           ),
         ),
@@ -176,23 +171,22 @@ class MainMenuScreen extends StatelessWidget {
 
   Widget _buildLogoLetter(String letter, Color color) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      width: 45,
-      height: 45,
+      margin: const EdgeInsets.symmetric(horizontal: 6),
+      width: 55,
+      height: 55,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withOpacity(0.9),
         shape: BoxShape.circle,
         border: Border.all(color: color, width: 4),
-        boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 4, offset: Offset(2, 2))],
+        boxShadow: [
+          BoxShadow(color: color.withOpacity(0.6), blurRadius: 15),
+          const BoxShadow(color: Colors.black26, blurRadius: 5, offset: Offset(0, 5)),
+        ],
       ),
       child: Center(
         child: Text(
           letter,
-          style: TextStyle(
-            color: color,
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: color, fontSize: 32, fontWeight: FontWeight.bold),
         ),
       ),
     );
@@ -209,21 +203,18 @@ class MainMenuScreen extends StatelessWidget {
                 child: _buildGameButton(
                   title: 'PLAY ONLINE',
                   icon: Icons.language,
-                  subtitle: 'Players: 113,392',
+                  color: Colors.purpleAccent,
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const LobbyScreen()),
-                    );
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const LobbyScreen()));
                   },
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: _buildGameButton(
-                  title: 'PLAY WITH FRIENDS',
+                  title: 'WITH FRIENDS',
                   icon: Icons.people,
-                  subtitle: 'Players: 22,199',
+                  color: Colors.blueAccent,
                   onTap: () {},
                 ),
               ),
@@ -236,11 +227,9 @@ class MainMenuScreen extends StatelessWidget {
                 child: _buildGameButton(
                   title: 'VS COMPUTER',
                   icon: Icons.computer,
+                  color: Colors.orangeAccent,
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const GameScreen(isSinglePlayer: true)),
-                    );
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const GameScreen(isSinglePlayer: true)));
                   },
                 ),
               ),
@@ -249,11 +238,9 @@ class MainMenuScreen extends StatelessWidget {
                 child: _buildGameButton(
                   title: 'PASS N PLAY',
                   icon: Icons.group,
+                  color: Colors.greenAccent,
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const GameScreen(isSinglePlayer: false)),
-                    );
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const GameScreen(isSinglePlayer: false)));
                   },
                 ),
               ),
@@ -264,78 +251,45 @@ class MainMenuScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildGameButton({
-    required String title,
-    required IconData icon,
-    String? subtitle,
-    required VoidCallback onTap,
-  }) {
+  Widget _buildGameButton({required String title, required IconData icon, required Color color, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            height: 120,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF003D82), Color(0xFF001A40)],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
+      child: Container(
+        height: 140,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
+          boxShadow: [
+            BoxShadow(color: color.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 10)),
+          ],
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Positioned(
+              top: 20,
+              child: Icon(icon, size: 60, color: Colors.white),
+            ),
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.9),
+                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(22)),
+                ),
+                child: Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 1),
+                ),
               ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.amberAccent, width: 3),
-              boxShadow: const [
-                BoxShadow(color: Colors.black54, blurRadius: 8, offset: Offset(2, 4)),
-              ],
-            ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                // Inner icon
-                Positioned(
-                  top: 15,
-                  child: Icon(icon, size: 50, color: Colors.white.withOpacity(0.9)),
-                ),
-                // Title Ribbon
-                Positioned(
-                  bottom: -2,
-                  left: -2,
-                  right: -2,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    decoration: const BoxDecoration(
-                      color: Colors.amber,
-                      borderRadius: BorderRadius.vertical(bottom: Radius.circular(14)),
-                    ),
-                    child: Text(
-                      title,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Color(0xFF0A1950),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (subtitle != null) ...[
-            const SizedBox(height: 6),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.circle, color: Colors.greenAccent, size: 10),
-                const SizedBox(width: 4),
-                Text(
-                  subtitle,
-                  style: const TextStyle(color: Colors.greenAccent, fontSize: 12, fontWeight: FontWeight.bold),
-                ),
-              ],
             ),
           ],
-        ],
+        ),
       ),
     );
   }
@@ -344,52 +298,50 @@ class MainMenuScreen extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        _buildCircleButton(Icons.local_play, 'TOURNAMENT'),
-        _buildCircleButton(Icons.escalator, 'SNAKES'),
+        _buildCircleButton(Icons.local_play, 'TOURNAMENT', Colors.pinkAccent),
+        _buildCircleButton(Icons.escalator, 'SNAKES', Colors.cyanAccent),
       ],
     );
   }
 
-  Widget _buildCircleButton(IconData icon, String text) {
+  Widget _buildCircleButton(IconData icon, String text, Color color) {
     return Column(
       children: [
         Container(
-          width: 60,
-          height: 60,
+          width: 70,
+          height: 70,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.redAccent,
-            border: Border.all(color: Colors.amber, width: 3),
-            boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 6)],
+            color: color.withOpacity(0.8),
+            border: Border.all(color: Colors.white, width: 3),
+            boxShadow: [BoxShadow(color: color.withOpacity(0.5), blurRadius: 15, offset: const Offset(0, 5))],
           ),
-          child: Icon(icon, color: Colors.white, size: 32),
+          child: Icon(icon, color: Colors.white, size: 36),
         ),
-        const SizedBox(height: 4),
-        Text(
-          text,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10),
-        ),
+        const SizedBox(height: 8),
+        Text(text, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1)),
       ],
     );
   }
 
   Widget _buildBottomExtras() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 20.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _buildCircleButton(Icons.monetization_on, 'FREE COINS'),
+          _buildCircleButton(Icons.monetization_on, 'FREE COINS', Colors.amber),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Colors.orange, Colors.deepOrange]),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.amber, width: 2),
+              gradient: const LinearGradient(colors: [Colors.orangeAccent, Colors.deepOrange]),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(color: Colors.white, width: 2),
+              boxShadow: const [BoxShadow(color: Colors.deepOrangeAccent, blurRadius: 15)],
             ),
-            child: const Text('CLAIM', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+            child: const Text('CLAIM', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20, letterSpacing: 2)),
           ),
-          _buildCircleButton(Icons.rotate_right, 'SPIN'),
+          _buildCircleButton(Icons.rotate_right, 'SPIN', Colors.purpleAccent),
         ],
       ),
     );
@@ -397,52 +349,31 @@ class MainMenuScreen extends StatelessWidget {
 
   Widget _buildBottomNavigationBar() {
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF001A40),
-        border: Border(top: BorderSide(color: Colors.blueAccent, width: 2)),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.5),
+        border: Border(top: BorderSide(color: Colors.white.withOpacity(0.2), width: 1)),
       ),
-      child: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.transparent,
-        selectedItemColor: Colors.amber,
-        unselectedItemColor: Colors.white60,
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
-        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home, size: 28), label: 'HOME'),
-          BottomNavigationBarItem(icon: Icon(Icons.event, size: 28), label: 'EVENT'),
-          BottomNavigationBarItem(icon: Icon(Icons.chat, size: 28), label: 'SOCIAL'),
-          BottomNavigationBarItem(icon: Icon(Icons.inventory, size: 28), label: 'INVENTORY'),
-          BottomNavigationBarItem(icon: Icon(Icons.store, size: 28), label: 'STORE'),
-        ],
+      child: ClipRRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.transparent,
+            selectedItemColor: Colors.white,
+            unselectedItemColor: Colors.white54,
+            selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
+            unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10),
+            items: const [
+              BottomNavigationBarItem(icon: Icon(Icons.home, size: 28), label: 'HOME'),
+              BottomNavigationBarItem(icon: Icon(Icons.event, size: 28), label: 'EVENT'),
+              BottomNavigationBarItem(icon: Icon(Icons.chat, size: 28), label: 'SOCIAL'),
+              BottomNavigationBarItem(icon: Icon(Icons.inventory, size: 28), label: 'INVENTORY'),
+              BottomNavigationBarItem(icon: Icon(Icons.store, size: 28), label: 'STORE'),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
-class BackgroundPatternPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.blueAccent.withOpacity(0.05)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-
-    const double spacing = 60;
-    
-    // Draw subtle squares with dots inside mimicking dice
-    for (double i = 0; i < size.width; i += spacing) {
-      for (double j = 0; j < size.height; j += spacing) {
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(Rect.fromLTWH(i + 10, j + 10, spacing - 20, spacing - 20), const Radius.circular(8)),
-          paint,
-        );
-        // Middle dot
-        canvas.drawCircle(Offset(i + spacing / 2, j + spacing / 2), 4, Paint()..color = Colors.blueAccent.withOpacity(0.05));
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}

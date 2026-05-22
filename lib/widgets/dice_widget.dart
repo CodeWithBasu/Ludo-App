@@ -27,7 +27,7 @@ class DiceWidgetState extends State<DiceWidget> with SingleTickerProviderStateMi
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 600),
     );
   }
 
@@ -55,14 +55,21 @@ class DiceWidgetState extends State<DiceWidget> with SingleTickerProviderStateMi
       child: AnimatedBuilder(
         animation: _controller,
         builder: (context, child) {
-          // Add a rotation and scale effect during animation
-          final angle = _controller.value * 2 * pi;
-          final scale = 1.0 - (_controller.value * 0.2); // slight shrink
+          // Bouncy 3D rotation effect
+          final progress = _controller.value;
+          final angleX = progress * pi * 4; // spin twice
+          final angleY = progress * pi * 2;
+          
+          // Bouncy scale: start at 1, go up to 1.3, back to 1
+          final scale = 1.0 + sin(progress * pi) * 0.3;
           
           return Transform(
             alignment: Alignment.center,
             transform: Matrix4.identity()
-              ..rotateZ(angle)
+              ..setEntry(3, 2, 0.002) // perspective
+              ..rotateX(angleX)
+              ..rotateY(angleY)
+              ..rotateZ(progress * pi)
               ..scale(scale),
             child: _buildDiceFace(widget.enabled ? widget.value : 0),
           );
@@ -72,36 +79,79 @@ class DiceWidgetState extends State<DiceWidget> with SingleTickerProviderStateMi
   }
 
   Widget _buildDiceFace(int val) {
-    // If value is 0 or animation is happening, show a question mark or blank
     if (_controller.isAnimating) {
-      val = Random().nextInt(6) + 1; // Show random faces while rolling
+      val = Random().nextInt(6) + 1;
     }
 
     return Container(
       width: 80,
       height: 80,
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: widget.enabled ? widget.color : Colors.grey.shade400,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white, width: 4),
-        boxShadow: const [
+        gradient: LinearGradient(
+          colors: [
+            widget.enabled ? widget.color.withOpacity(0.8) : Colors.grey.shade400,
+            widget.enabled ? widget.color : Colors.grey.shade600,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.8), width: 3),
+        boxShadow: [
           BoxShadow(
-            color: Colors.black26,
-            blurRadius: 8,
-            offset: Offset(2, 4),
-          )
+            color: widget.enabled ? widget.color.withOpacity(0.5) : Colors.black26,
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+          const BoxShadow(
+            color: Colors.white30,
+            blurRadius: 2,
+            offset: Offset(-2, -2),
+          ),
         ],
       ),
-      child: Center(
-        child: Text(
-          val == 0 ? '?' : '$val',
-          style: const TextStyle(
-            fontSize: 40,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
+      child: val == 0 
+          ? const Center(child: Icon(Icons.help_outline, color: Colors.white, size: 40)) 
+          : _buildDots(val),
+    );
+  }
+
+  Widget _buildDots(int val) {
+    List<Widget> dots = [];
+    final dotColor = Colors.white;
+    
+    Widget dot() => Container(
+      width: 14,
+      height: 14,
+      decoration: BoxDecoration(
+        color: dotColor,
+        shape: BoxShape.circle,
+        boxShadow: const [
+          BoxShadow(color: Colors.black26, blurRadius: 2, offset: Offset(1, 1))
+        ],
       ),
+    );
+
+    // Positions based on a 3x3 grid
+    bool tl = val > 1; // top left
+    bool tr = val > 3; // top right
+    bool ml = val == 6; // mid left
+    bool mr = val == 6; // mid right
+    bool bl = val > 3; // bottom left
+    bool br = val > 1; // bottom right
+    bool cc = val % 2 == 1; // center
+
+    return Stack(
+      children: [
+        if (tl) Positioned(top: 4, left: 4, child: dot()),
+        if (tr) Positioned(top: 4, right: 4, child: dot()),
+        if (ml) Positioned(top: 24, left: 4, child: dot()),
+        if (cc) Positioned(top: 24, left: 24, child: dot()),
+        if (mr) Positioned(top: 24, right: 4, child: dot()),
+        if (bl) Positioned(bottom: 4, left: 4, child: dot()),
+        if (br) Positioned(bottom: 4, right: 4, child: dot()),
+      ],
     );
   }
 }
