@@ -8,6 +8,8 @@
   [![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white)](https://flutter.dev)
   [![Firebase](https://img.shields.io/badge/Firebase-039BE5?style=for-the-badge&logo=Firebase&logoColor=white)](https://firebase.google.com/)
   [![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS%20%7C%20Web-lightgrey?style=for-the-badge)](#)
+
+  [<img src="https://img.shields.io/badge/Download_APK-Android_Release-brightgreen?style=for-the-badge&logo=android" alt="Download APK" />](https://github.com/CodeWithBasu/Ludo-App/releases/latest)
 </div>
 
 ---
