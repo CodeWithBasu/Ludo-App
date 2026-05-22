@@ -149,4 +149,25 @@ class GameLogic {
     const safeSpots = [0, 8, 13, 21, 26, 34, 39, 47];
     return safeSpots.contains(absolutePosition);
   }
+
+  /// Returns a list of pawns that can currently make a valid move for the given color
+  static List<Pawn> getValidMoves(GameState state, PlayerColor color) {
+    if (!state.diceRolled || state.currentTurn != color) return [];
+
+    List<Pawn> validPawns = [];
+    for (var pawn in state.pawns[color]!) {
+      if (pawn.state == PawnState.atHome) continue;
+      
+      if (pawn.state == PawnState.atBase) {
+        if (state.diceValue == 6) {
+          validPawns.add(pawn);
+        }
+      } else {
+        if (pawn.position + state.diceValue <= 57) {
+          validPawns.add(pawn);
+        }
+      }
+    }
+    return validPawns;
+  }
 }

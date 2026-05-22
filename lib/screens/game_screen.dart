@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:ludo_app/models/game_state.dart';
 import 'package:ludo_app/models/player.dart';
@@ -9,7 +11,8 @@ import 'package:ludo_app/widgets/pawn_widget.dart';
 import 'package:ludo_app/widgets/dice_widget.dart';
 
 class GameScreen extends StatefulWidget {
-  const GameScreen({super.key});
+  final bool isSinglePlayer;
+  const GameScreen({super.key, this.isSinglePlayer = false});
 
   @override
   State<GameScreen> createState() => _GameScreenState();
@@ -17,23 +20,106 @@ class GameScreen extends StatefulWidget {
 
 class _GameScreenState extends State<GameScreen> {
   late GameState _gameState;
+  bool _isAITurning = false;
+  
+  // We need a GlobalKey to access the DiceWidget state to trigger its animation programmatically
+  final GlobalKey<DiceWidgetState> _diceKey = GlobalKey<DiceWidgetState>();
 
   @override
   void initState() {
     super.initState();
-    _gameState = GameState.initial();
+    _gameState = GameState.initial(isSinglePlayer: widget.isSinglePlayer);
+    _checkAITurn();
+  }
+
+  void _checkAITurn() {
+    // If it's a computer's turn and we aren't already processing an AI turn
+    Player currentPlayer = _gameState.players.firstWhere((p) => p.color == _gameState.currentTurn);
+    if (currentPlayer.isComputer && !_isAITurning) {
+      _playAITurn();
+    }
+  }
+
+  Future<void> _playAITurn() async {
+    setState(() {
+      _isAITurning = true;
+    });
+
+    // Wait a moment so human can see turn changed
+    await Future.delayed(const Duration(seconds: 1));
+
+    if (!mounted) return;
+
+    // Trigger dice roll animation
+    if (!_gameState.diceRolled) {
+      _diceKey.currentState?.triggerRoll();
+      // The triggerRoll will call _rollDice eventually, which handles state
+      // We will wait for animation + a small buffer
+      await Future.delayed(const Duration(milliseconds: 600));
+    }
+
+    if (!mounted) return;
+
+    // Now logic has updated dice value
+    List<Pawn> validMoves = GameLogic.getValidMoves(_gameState, _gameState.currentTurn);
+    
+    if (validMoves.isNotEmpty) {
+      // Small pause before moving
+      await Future.delayed(const Duration(milliseconds: 800));
+      if (!mounted) return;
+      
+      // Simple AI: Random valid move
+      Pawn chosenPawn = validMoves[Random().nextInt(validMoves.length)];
+      
+      setState(() {
+        GameLogic.movePawn(_gameState, chosenPawn);
+      });
+    } else {
+      // If no valid moves, we have to skip turn explicitly
+      // Actually GameLogic should handle passing turn if no moves, but we can do it here for AI
+      await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) return;
+      setState(() {
+        GameLogic.nextTurn(_gameState);
+      });
+    }
+
+    _isAITurning = false;
+    _checkAITurn(); // Check if next player is also AI, or same player rolling a 6
   }
 
   void _rollDice() {
     setState(() {
       GameLogic.rollDice(_gameState);
     });
+    // Check if AI needs to move (though mostly human triggers this)
+    // Wait, AI will trigger this via diceKey.
+    if (_gameState.players.firstWhere((p) => p.color == _gameState.currentTurn).isComputer) {
+       // Handled in _playAITurn
+    } else {
+      // If human rolled, but has no valid moves, we should auto skip turn, 
+      // but let's keep it simple for now, they might have to wait or we auto skip.
+      List<Pawn> validMoves = GameLogic.getValidMoves(_gameState, _gameState.currentTurn);
+      if (validMoves.isEmpty) {
+        Future.delayed(const Duration(seconds: 1), () {
+          if (mounted) {
+            setState(() {
+              GameLogic.nextTurn(_gameState);
+            });
+            _checkAITurn();
+          }
+        });
+      }
+    }
   }
 
   void _onPawnTapped(Pawn pawn) {
+    if (_isAITurning) return; // Ignore taps during AI turn
+    
     setState(() {
       GameLogic.movePawn(_gameState, pawn);
     });
+    _checkAITurn();
   }
 
   @override
@@ -166,6 +252,7 @@ class _GameScreenState extends State<GameScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           DiceWidget(
+            key: _diceKey,
             value: _gameState.diceValue,
             onRoll: _rollDice,
             color: _getColor(_gameState.currentTurn),

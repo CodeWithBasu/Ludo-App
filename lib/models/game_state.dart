@@ -18,12 +18,12 @@ class GameState {
   });
 
   /// Factory to initialize a standard game state
-  factory GameState.initial() {
+  factory GameState.initial({bool isSinglePlayer = false}) {
     final players = [
       Player(id: '1', name: 'Player 1', color: PlayerColor.red),
-      Player(id: '2', name: 'Player 2', color: PlayerColor.green),
-      Player(id: '3', name: 'Player 3', color: PlayerColor.yellow),
-      Player(id: '4', name: 'Player 4', color: PlayerColor.blue),
+      Player(id: '2', name: 'Player 2', color: PlayerColor.green, isComputer: isSinglePlayer),
+      Player(id: '3', name: 'Player 3', color: PlayerColor.yellow, isComputer: isSinglePlayer),
+      Player(id: '4', name: 'Player 4', color: PlayerColor.blue, isComputer: isSinglePlayer),
     ];
 
     final Map<PlayerColor, List<Pawn>> pawns = {};

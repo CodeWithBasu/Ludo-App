@@ -39,7 +39,10 @@ class _DiceWidgetState extends State<DiceWidget> with SingleTickerProviderStateM
 
   void _handleTap() {
     if (!widget.enabled) return;
-    
+    triggerRoll();
+  }
+
+  void triggerRoll() {
     _controller.forward(from: 0).then((_) {
       widget.onRoll();
     });

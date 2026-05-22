@@ -38,14 +38,17 @@ class MainMenuScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 60),
-                _buildMenuButton(context, 'Play vs Computer', Icons.computer, () {
-                  // Navigate to game vs CPU
+                _buildMenuButton(context, 'Single Player', Icons.person, () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const GameScreen(isSinglePlayer: true)),
+                  );
                 }),
                 const SizedBox(height: 20),
                 _buildMenuButton(context, 'Pass & Play', Icons.people, () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const GameScreen()),
+                    MaterialPageRoute(builder: (context) => const GameScreen(isSinglePlayer: false)),
                   );
                 }),
                 const SizedBox(height: 20),
