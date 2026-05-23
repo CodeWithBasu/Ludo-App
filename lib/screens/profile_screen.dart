@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:ludo_app/services/auth_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -10,10 +12,15 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  final AuthService _authService = AuthService();
+
   int _selectedAvatar = 0;
   String _playerName = 'Basudev';
   String _selectedCountry = '🇮🇳 India';
   bool _isLoading = true;
+  bool _isSigningIn = false;
+
+  User? _firebaseUser;
 
   final List<String> _avatars = [
     'assets/avatars/avatar1.png',
@@ -53,20 +60,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadProfile() async {
     try {
+      // Check if already signed in via Firebase
+      _firebaseUser = _authService.currentUser;
+
       final prefs = await SharedPreferences.getInstance();
       setState(() {
         _selectedAvatar = prefs.getInt('profile_avatar') ?? 0;
-        _playerName = prefs.getString('profile_name') ?? 'Basudev';
+        // If Firebase user is signed in, use their Google name
+        _playerName = _firebaseUser?.displayName ??
+            prefs.getString('profile_name') ??
+            'Basudev';
         _selectedCountry = prefs.getString('profile_country') ?? '🇮🇳 India';
         _isLoading = false;
       });
     } catch (e) {
-      // If SharedPreferences fails (e.g. native plugin not yet registered),
-      // fall back to defaults so the screen still loads.
       setState(() {
-        _selectedAvatar = 0;
-        _playerName = 'Basudev';
-        _selectedCountry = '🇮🇳 India';
+        _firebaseUser = _authService.currentUser;
         _isLoading = false;
       });
     }
@@ -78,8 +87,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await prefs.setInt('profile_avatar', _selectedAvatar);
       await prefs.setString('profile_name', _playerName);
       await prefs.setString('profile_country', _selectedCountry);
-    } catch (e) {
-      // Silently ignore save errors
+    } catch (_) {}
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isSigningIn = true);
+    final user = await _authService.signInWithGoogle();
+    if (mounted) {
+      if (user != null) {
+        // Save name from Google
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('profile_name', user.displayName ?? _playerName);
+        setState(() {
+          _firebaseUser = user;
+          _playerName = user.displayName ?? _playerName;
+          _isSigningIn = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✅ Signed in as ${user.displayName}!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        setState(() => _isSigningIn = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Sign-in cancelled or failed.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleSignOut() async {
+    await _authService.signOut();
+    if (mounted) {
+      setState(() => _firebaseUser = null);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Signed out successfully.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
     }
   }
 
@@ -89,7 +140,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1565C0),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Choose Avatar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
+        title: const Text('Choose Avatar',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
         content: SizedBox(
           width: 300,
           child: GridView.builder(
@@ -105,11 +157,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Navigator.pop(ctx);
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('✅ Avatar saved!'),
-                      backgroundColor: Colors.green,
-                      duration: Duration(seconds: 1),
-                    ),
+                    const SnackBar(content: Text('✅ Avatar saved!'), backgroundColor: Colors.green, duration: Duration(seconds: 1)),
                   );
                 }
               },
@@ -143,7 +191,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1565C0),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Change Name', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text('Change Name',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         content: TextField(
           controller: ctrl,
           autofocus: true,
@@ -157,10 +206,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white60)),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel', style: TextStyle(color: Colors.white60))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.amber, foregroundColor: Colors.black),
             onPressed: () async {
@@ -171,11 +218,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Navigator.pop(ctx);
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('✅ Name saved!'),
-                      backgroundColor: Colors.green,
-                      duration: Duration(seconds: 1),
-                    ),
+                    const SnackBar(content: Text('✅ Name saved!'), backgroundColor: Colors.green, duration: Duration(seconds: 1)),
                   );
                 }
               }
@@ -193,7 +236,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1565C0),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Select Country', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text('Select Country',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         content: SizedBox(
           width: 300,
           height: 400,
@@ -210,11 +254,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Navigator.pop(ctx);
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('✅ Country saved!'),
-                        backgroundColor: Colors.green,
-                        duration: Duration(seconds: 1),
-                      ),
+                      const SnackBar(content: Text('✅ Country saved!'), backgroundColor: Colors.green, duration: Duration(seconds: 1)),
                     );
                   }
                 },
@@ -223,6 +263,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  /// Builds the avatar widget — shows Google profile photo if signed in,
+  /// otherwise shows the selected game avatar.
+  Widget _buildAvatarWidget({double size = 90}) {
+    final photoUrl = _firebaseUser?.photoURL;
+    if (photoUrl != null && photoUrl.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(size * 0.14),
+        child: Image.network(
+          photoUrl,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) =>
+              Image.asset(_avatars[_selectedAvatar], width: size, height: size, fit: BoxFit.cover),
+        ),
+      );
+    }
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(size * 0.14),
+      child: Image.asset(_avatars[_selectedAvatar], width: size, height: size, fit: BoxFit.cover),
     );
   }
 
@@ -248,16 +311,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 gradient: LinearGradient(colors: [Color(0xFFB71C1C), Color(0xFFE53935), Color(0xFFB71C1C)]),
                 boxShadow: [BoxShadow(color: Colors.black45, blurRadius: 10, offset: Offset(0, 4))],
               ),
-              child: const Text(
-                'STATISTICS',
+              child: const Text('STATISTICS',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 26,
-                  letterSpacing: 4,
-                  shadows: [Shadow(color: Colors.black, blurRadius: 6, offset: Offset(0, 3))],
-                ),
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 26, letterSpacing: 4,
+                    shadows: [Shadow(color: Colors.black, blurRadius: 6, offset: Offset(0, 3))]),
               ),
             ),
 
@@ -269,31 +326,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     // Player ID bar
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1976D2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      decoration: BoxDecoration(color: const Color(0xFF1976D2), borderRadius: BorderRadius.circular(12)),
                       child: Row(
                         children: [
                           GestureDetector(
                             onTap: _showCountryPicker,
-                            child: Text(
-                              _selectedCountry.split(' ')[0],
-                              style: const TextStyle(fontSize: 28),
-                            ),
+                            child: Text(_selectedCountry.split(' ')[0], style: const TextStyle(fontSize: 28)),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: const Text(
-                              '69f722b9a3e864edc0dd4f8c',
-                              style: TextStyle(color: Colors.white70, fontSize: 13, fontFamily: 'monospace'),
+                            child: Text(
+                              _firebaseUser?.uid ?? '69f722b9a3e864edc0dd4f8c',
+                              style: const TextStyle(color: Colors.white70, fontSize: 13, fontFamily: 'monospace'),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           IconButton(
                             icon: const Icon(Icons.copy, color: Colors.white70, size: 20),
                             onPressed: () {
-                              Clipboard.setData(const ClipboardData(text: '69f722b9a3e864edc0dd4f8c'));
+                              Clipboard.setData(ClipboardData(text: _firebaseUser?.uid ?? '69f722b9a3e864edc0dd4f8c'));
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(content: Text('ID Copied!'), duration: Duration(seconds: 1)),
                               );
@@ -318,9 +369,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Avatar
+                              // Avatar (Google photo or game avatar)
                               GestureDetector(
-                                onTap: _showAvatarPicker,
+                                onTap: _firebaseUser == null ? _showAvatarPicker : null,
                                 child: Stack(
                                   children: [
                                     Container(
@@ -331,20 +382,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         border: Border.all(color: const Color(0xFF1565C0), width: 3),
                                         boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)],
                                       ),
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(11),
-                                        child: Image.asset(_avatars[_selectedAvatar], fit: BoxFit.cover),
-                                      ),
+                                      child: _buildAvatarWidget(),
                                     ),
-                                    Positioned(
-                                      bottom: 0,
-                                      right: 0,
-                                      child: Container(
-                                        padding: const EdgeInsets.all(3),
-                                        decoration: const BoxDecoration(color: Color(0xFF1565C0), shape: BoxShape.circle),
-                                        child: const Icon(Icons.edit, color: Colors.white, size: 14),
+                                    if (_firebaseUser == null)
+                                      Positioned(
+                                        bottom: 0, right: 0,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(3),
+                                          decoration: const BoxDecoration(color: Color(0xFF1565C0), shape: BoxShape.circle),
+                                          child: const Icon(Icons.edit, color: Colors.white, size: 14),
+                                        ),
                                       ),
-                                    ),
+                                    if (_firebaseUser != null)
+                                      Positioned(
+                                        bottom: 0, right: 0,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(3),
+                                          decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+                                          child: const Icon(Icons.check, color: Colors.white, size: 14),
+                                        ),
+                                      ),
                                   ],
                                 ),
                               ),
@@ -353,14 +410,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    // Name row
                                     Row(
                                       children: [
                                         const Icon(Icons.person, color: Color(0xFF1565C0), size: 18),
                                         const SizedBox(width: 6),
                                         Expanded(
-                                          child: Text(
-                                            _playerName,
+                                          child: Text(_playerName,
                                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Color(0xFF0D47A1)),
                                             overflow: TextOverflow.ellipsis,
                                           ),
@@ -371,8 +426,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         ),
                                       ],
                                     ),
+                                    // Email if signed in
+                                    if (_firebaseUser?.email != null)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 4),
+                                        child: Text(_firebaseUser!.email!,
+                                          style: const TextStyle(color: Colors.blueGrey, fontSize: 12),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
                                     const SizedBox(height: 8),
-                                    // Coins & Gems
                                     Row(
                                       children: const [
                                         Icon(Icons.monetization_on, color: Colors.amber, size: 20),
@@ -385,7 +448,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       ],
                                     ),
                                     const SizedBox(height: 10),
-                                    // Country
                                     GestureDetector(
                                       onTap: _showCountryPicker,
                                       child: Row(
@@ -402,7 +464,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ],
                           ),
                           const SizedBox(height: 12),
-                          // Status bar
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                             decoration: BoxDecoration(
@@ -410,9 +471,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(color: Colors.blue.withOpacity(0.3)),
                             ),
-                            child: Row(
+                            child: const Row(
                               children: [
-                                const Expanded(
+                                Expanded(
                                   child: TextField(
                                     decoration: InputDecoration(
                                       hintText: 'Add your status...',
@@ -424,7 +485,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     style: TextStyle(fontSize: 14, color: Colors.black87),
                                   ),
                                 ),
-                                const Icon(Icons.edit, color: Color(0xFF1565C0), size: 18),
+                                Icon(Icons.edit, color: Color(0xFF1565C0), size: 18),
                               ],
                             ),
                           ),
@@ -437,10 +498,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     // Level progress
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1565C0),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      decoration: BoxDecoration(color: const Color(0xFF1565C0), borderRadius: BorderRadius.circular(12)),
                       child: Column(
                         children: [
                           const Align(
@@ -455,8 +513,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(10),
                                   child: const LinearProgressIndicator(
-                                    value: 0.0,
-                                    minHeight: 20,
+                                    value: 0.0, minHeight: 20,
                                     backgroundColor: Color(0xFF0D47A1),
                                     valueColor: AlwaysStoppedAnimation<Color>(Colors.amber),
                                   ),
@@ -474,19 +531,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     // Stats list
                     Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1565C0),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
+                      decoration: BoxDecoration(color: const Color(0xFF1565C0), borderRadius: BorderRadius.circular(16)),
                       padding: const EdgeInsets.all(10),
                       child: Column(
-                        children: _stats.map((stat) => _buildStatRow(stat['icon']!, stat['label']!, stat['value']!)).toList(),
+                        children: _stats.map((s) => _buildStatRow(s['icon']!, s['label']!, s['value']!)).toList(),
                       ),
                     ),
 
                     const SizedBox(height: 16),
 
-                    // Bottom buttons
                     Row(
                       children: [
                         Expanded(child: _buildActionButton(Icons.cloud_upload, 'Save\nData', Colors.green)),
@@ -499,63 +552,91 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     const SizedBox(height: 10),
 
-                    // Facebook login
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1877F2),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 3))],
+                    // Google Sign-In / Sign-Out
+                    if (_firebaseUser == null)
+                      GestureDetector(
+                        onTap: _isSigningIn ? null : _handleGoogleSignIn,
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)],
+                          ),
+                          child: _isSigningIn
+                              ? const Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)))
+                              : const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.g_mobiledata, color: Colors.red, size: 32),
+                                    SizedBox(width: 8),
+                                    Text('Login with Google', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black87)),
+                                  ],
+                                ),
+                        ),
+                      )
+                    else
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.green),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.verified_user, color: Colors.green, size: 24),
+                            const SizedBox(width: 8),
+                            Text('Signed in as ${_firebaseUser!.displayName ?? 'User'}',
+                              style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 16)),
+                          ],
+                        ),
                       ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.facebook, color: Colors.white, size: 28),
-                          SizedBox(width: 10),
-                          Text('Login with Facebook', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-                        ],
-                      ),
-                    ),
 
                     const SizedBox(height: 10),
 
+                    // Facebook (coming soon) + Sign Out row
                     Row(
                       children: [
                         Expanded(
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: const Color(0xFF1877F2),
                               borderRadius: BorderRadius.circular(12),
-                              boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)],
                             ),
                             child: const Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.g_mobiledata, color: Colors.red, size: 28),
+                                Icon(Icons.facebook, color: Colors.white, size: 24),
                                 SizedBox(width: 6),
-                                Text('Google', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
+                                Text('Facebook', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white)),
                               ],
                             ),
                           ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)],
-                            ),
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.sports_esports, color: Colors.black54, size: 24),
-                                SizedBox(width: 6),
-                                Text('Sign Out', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
-                              ],
+                          child: GestureDetector(
+                            onTap: _handleSignOut,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)],
+                              ),
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.logout, color: Colors.redAccent, size: 24),
+                                  SizedBox(width: 6),
+                                  Text('Sign Out', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87)),
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -564,7 +645,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     const SizedBox(height: 10),
 
-                    // Edit Profile button
                     GestureDetector(
                       onTap: _showEditName,
                       child: Container(
@@ -586,21 +666,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 20),
                   ],
                 ),
               ),
             ),
 
-            // Back button
             Padding(
               padding: const EdgeInsets.all(12),
               child: GestureDetector(
                 onTap: () => Navigator.pop(context),
                 child: Container(
-                  width: 60,
-                  height: 60,
+                  width: 60, height: 60,
                   decoration: BoxDecoration(
                     color: const Color(0xFFFF8F00),
                     shape: BoxShape.circle,
@@ -632,10 +709,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Text(emoji, style: const TextStyle(fontSize: 22)),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 0.5),
-            ),
+            child: Text(label, style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 0.5)),
           ),
           Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 22)),
         ],

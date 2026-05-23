@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:ludo_app/screens/game_screen.dart';
 import 'package:ludo_app/screens/lobby_screen.dart';
 import 'package:ludo_app/screens/profile_screen.dart';
+import 'package:ludo_app/services/auth_service.dart';
 
 class MainMenuScreen extends StatefulWidget {
   const MainMenuScreen({super.key});
@@ -14,11 +16,16 @@ class MainMenuScreen extends StatefulWidget {
 class _MainMenuScreenState extends State<MainMenuScreen> with SingleTickerProviderStateMixin {
   late AnimationController _animController;
   int _selectedIndex = 0;
+  User? _currentUser;
 
   @override
   void initState() {
     super.initState();
     _animController = AnimationController(vsync: this, duration: const Duration(seconds: 10))..repeat();
+    // Listen to auth state so avatar updates immediately after sign-in
+    AuthService().authStateChanges().listen((user) {
+      if (mounted) setState(() => _currentUser = user);
+    });
   }
 
   @override
@@ -183,7 +190,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> with SingleTickerProvid
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Row(
         children: [
-          // Profile Icon
+          // Profile Icon — shows Google photo if signed in
           GestureDetector(
             onTap: _showProfileDialog,
             child: Container(
@@ -195,7 +202,17 @@ class _MainMenuScreenState extends State<MainMenuScreen> with SingleTickerProvid
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 8)],
               ),
-              child: const Icon(Icons.person, color: Colors.white, size: 36),
+              child: _currentUser?.photoURL != null
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: Image.network(
+                        _currentUser!.photoURL!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) =>
+                            const Icon(Icons.person, color: Colors.white, size: 36),
+                      ),
+                    )
+                  : const Icon(Icons.person, color: Colors.white, size: 36),
             ),
           ),
           const SizedBox(width: 12),
