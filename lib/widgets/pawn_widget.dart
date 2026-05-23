@@ -59,7 +59,7 @@ class PawnWidget extends StatelessWidget {
                   color: baseColor.withOpacity(0.8),
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.black26, width: 1),
-                  boxShadow: const [BoxShadow(color: Colors.white54, blurRadius: 2, inset: true)],
+                  boxShadow: const [BoxShadow(color: Colors.white54, blurRadius: 2)],
                 ),
               ),
             ),

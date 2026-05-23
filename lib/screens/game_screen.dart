@@ -369,7 +369,7 @@ class _GameScreenState extends State<GameScreen> {
     String country = isHost ? _hostCountry : 'KR';
     int coins = isHost ? 1985 : 9387;
     String avatarUrl = isHost 
-        ? 'https://cdn-icons-png.flaticon.com/512/4140/41400$(_hostAvatar + 47).png'
+        ? 'https://cdn-icons-png.flaticon.com/512/4140/41400${_hostAvatar + 47}.png'
         : 'https://cdn-icons-png.flaticon.com/512/4140/4140048.png';
 
     return Container(
