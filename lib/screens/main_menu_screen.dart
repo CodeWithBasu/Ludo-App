@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ludo_app/screens/game_screen.dart';
 import 'package:ludo_app/screens/lobby_screen.dart';
 import 'package:ludo_app/screens/profile_screen.dart';
@@ -17,15 +18,35 @@ class _MainMenuScreenState extends State<MainMenuScreen> with SingleTickerProvid
   late AnimationController _animController;
   int _selectedIndex = 0;
   User? _currentUser;
+  int _selectedAvatar = 0;
+
+  final List<String> _avatars = [
+    'assets/avatars/avatar1.png',
+    'assets/avatars/avatar2.png',
+    'assets/avatars/avatar3.png',
+    'assets/avatars/avatar4.png',
+  ];
 
   @override
   void initState() {
     super.initState();
     _animController = AnimationController(vsync: this, duration: const Duration(seconds: 10))..repeat();
+    _loadAvatar();
     // Listen to auth state so avatar updates immediately after sign-in
     AuthService().authStateChanges.listen((user) {
       if (mounted) setState(() => _currentUser = user);
     });
+  }
+
+  Future<void> _loadAvatar() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (mounted) {
+        setState(() {
+          _selectedAvatar = prefs.getInt('profile_avatar') ?? 0;
+        });
+      }
+    } catch (_) {}
   }
 
   @override
@@ -52,11 +73,12 @@ class _MainMenuScreenState extends State<MainMenuScreen> with SingleTickerProvid
     );
   }
 
-  void _showProfileDialog() {
-    Navigator.push(
+  void _showProfileDialog() async {
+    await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const ProfileScreen()),
     );
+    _loadAvatar();
   }
 
   void _showSettingsSheet() {
@@ -209,10 +231,16 @@ class _MainMenuScreenState extends State<MainMenuScreen> with SingleTickerProvid
                         _currentUser!.photoURL!,
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) =>
-                            const Icon(Icons.person, color: Colors.white, size: 36),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(14),
+                              child: Image.asset(_avatars[_selectedAvatar], fit: BoxFit.cover),
+                            ),
                       ),
                     )
-                  : const Icon(Icons.person, color: Colors.white, size: 36),
+                  : ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: Image.asset(_avatars[_selectedAvatar], fit: BoxFit.cover),
+                    ),
             ),
           ),
           const SizedBox(width: 12),
