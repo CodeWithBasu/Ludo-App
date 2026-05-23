@@ -23,7 +23,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> with SingleTickerProvid
     super.initState();
     _animController = AnimationController(vsync: this, duration: const Duration(seconds: 10))..repeat();
     // Listen to auth state so avatar updates immediately after sign-in
-    AuthService().authStateChanges().listen((user) {
+    AuthService().authStateChanges.listen((user) {
       if (mounted) setState(() => _currentUser = user);
     });
   }
