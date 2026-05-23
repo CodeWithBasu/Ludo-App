@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:ludo_app/screens/game_screen.dart';
 import 'package:ludo_app/screens/lobby_screen.dart';
+import 'package:ludo_app/screens/profile_screen.dart';
 
 class MainMenuScreen extends StatefulWidget {
   const MainMenuScreen({super.key});
@@ -45,40 +46,9 @@ class _MainMenuScreenState extends State<MainMenuScreen> with SingleTickerProvid
   }
 
   void _showProfileDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white.withOpacity(0.95),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircleAvatar(radius: 40, backgroundColor: Colors.purpleAccent, child: Icon(Icons.person, size: 50, color: Colors.white)),
-            const SizedBox(height: 16),
-            const Text('Player 1', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            const Text('Level 12', style: TextStyle(fontSize: 16, color: Colors.grey)),
-            const Divider(height: 30),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _statColumn('Games', '42'),
-                _statColumn('Wins', '28'),
-                _statColumn('Win Rate', '66%'),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _statColumn(String label, String value) {
-    return Column(
-      children: [
-        Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blueAccent)),
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-      ],
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ProfileScreen()),
     );
   }
 
