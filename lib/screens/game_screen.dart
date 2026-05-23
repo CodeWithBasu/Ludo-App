@@ -17,6 +17,7 @@ class GameScreen extends StatefulWidget {
   final bool isOnline;
   final String? roomCode;
   final bool isHost;
+  final int playerCount;
 
   const GameScreen({
     super.key, 
@@ -24,6 +25,7 @@ class GameScreen extends StatefulWidget {
     this.isOnline = false,
     this.roomCode,
     this.isHost = true,
+    this.playerCount = 4,
   });
 
   @override
@@ -42,7 +44,10 @@ class _GameScreenState extends State<GameScreen> {
   @override
   void initState() {
     super.initState();
-    _gameState = GameState.initial(isSinglePlayer: widget.isSinglePlayer);
+    _gameState = GameState.initial(
+      isSinglePlayer: widget.isSinglePlayer, 
+      playerCount: widget.playerCount,
+    );
     
     if (widget.isOnline && widget.roomCode != null) {
       _gameStateSubscription = FirebaseService.listenToGameState(widget.roomCode!).listen((state) {
@@ -65,8 +70,8 @@ class _GameScreenState extends State<GameScreen> {
 
   bool get _isMyTurn {
     if (!widget.isOnline) return true; // Local play, anyone can tap
-    if (widget.isHost && _gameState.currentTurn == PlayerColor.red) return true;
-    if (!widget.isHost && _gameState.currentTurn == PlayerColor.green) return true;
+    if (widget.isHost && _gameState.players.isNotEmpty && _gameState.currentTurn == _gameState.players[0].color) return true;
+    if (!widget.isHost && _gameState.players.length > 1 && _gameState.currentTurn == _gameState.players[1].color) return true;
     return false;
   }
 
@@ -260,6 +265,8 @@ class _GameScreenState extends State<GameScreen> {
     List<Widget> pawnWidgets = [];
     
     for (var color in PlayerColor.values) {
+      if (!_gameState.pawns.containsKey(color)) continue;
+      
       List<Pawn> pawns = _gameState.pawns[color]!;
       for (int i = 0; i < pawns.length; i++) {
         Pawn pawn = pawns[i];

@@ -18,13 +18,21 @@ class GameState {
   });
 
   /// Factory to initialize a standard game state
-  factory GameState.initial({bool isSinglePlayer = false}) {
-    final players = [
-      Player(id: '1', name: 'Player 1', color: PlayerColor.red),
-      Player(id: '2', name: 'Player 2', color: PlayerColor.green, isComputer: isSinglePlayer),
-      Player(id: '3', name: 'Player 3', color: PlayerColor.yellow, isComputer: isSinglePlayer),
-      Player(id: '4', name: 'Player 4', color: PlayerColor.blue, isComputer: isSinglePlayer),
-    ];
+  factory GameState.initial({bool isSinglePlayer = false, int playerCount = 4}) {
+    List<Player> players;
+    if (playerCount == 2) {
+      players = [
+        Player(id: '1', name: 'Player 1', color: PlayerColor.red),
+        Player(id: '2', name: 'Player 2', color: PlayerColor.yellow, isComputer: isSinglePlayer),
+      ];
+    } else {
+      players = [
+        Player(id: '1', name: 'Player 1', color: PlayerColor.red),
+        Player(id: '2', name: 'Player 2', color: PlayerColor.green, isComputer: isSinglePlayer),
+        Player(id: '3', name: 'Player 3', color: PlayerColor.yellow, isComputer: isSinglePlayer),
+        Player(id: '4', name: 'Player 4', color: PlayerColor.blue, isComputer: isSinglePlayer),
+      ];
+    }
 
     final Map<PlayerColor, List<Pawn>> pawns = {};
     for (var player in players) {

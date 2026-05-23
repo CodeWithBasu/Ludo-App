@@ -3,7 +3,8 @@ import 'package:ludo_app/services/firebase_service.dart';
 import 'package:ludo_app/screens/game_screen.dart';
 
 class LobbyScreen extends StatefulWidget {
-  const LobbyScreen({super.key});
+  final int playerCount;
+  const LobbyScreen({super.key, this.playerCount = 4});
 
   @override
   State<LobbyScreen> createState() => _LobbyScreenState();
@@ -42,6 +43,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 isOnline: true,
                 roomCode: code,
                 isHost: true,
+                playerCount: widget.playerCount,
               )),
             );
           }
@@ -74,6 +76,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
               isOnline: true,
               roomCode: code,
               isHost: false,
+              playerCount: widget.playerCount,
             )),
           );
         }

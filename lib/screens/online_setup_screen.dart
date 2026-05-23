@@ -390,7 +390,7 @@ class _OnlineSetupScreenState extends State<OnlineSetupScreen> {
                       // Navigate to Lobby/Game with parameters
                       Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(builder: (context) => const LobbyScreen()),
+                        MaterialPageRoute(builder: (context) => LobbyScreen(playerCount: _selectedPlayers)),
                       );
                     },
                     child: _buildActionButton('Play'),
