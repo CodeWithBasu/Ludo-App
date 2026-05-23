@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:ludo_app/services/firebase_service.dart';
 import 'package:ludo_app/screens/game_screen.dart';
+import 'package:ludo_app/models/player.dart';
 
 class LobbyScreen extends StatefulWidget {
   final int playerCount;
-  const LobbyScreen({super.key, this.playerCount = 4});
+  final PlayerColor hostColor;
+  const LobbyScreen({super.key, this.playerCount = 4, this.hostColor = PlayerColor.red});
 
   @override
   State<LobbyScreen> createState() => _LobbyScreenState();
@@ -44,6 +46,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 roomCode: code,
                 isHost: true,
                 playerCount: widget.playerCount,
+                hostColor: widget.hostColor,
               )),
             );
           }
@@ -77,6 +80,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
               roomCode: code,
               isHost: false,
               playerCount: widget.playerCount,
+              hostColor: widget.hostColor,
             )),
           );
         }

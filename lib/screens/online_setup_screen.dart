@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ludo_app/screens/lobby_screen.dart';
+import 'package:ludo_app/models/player.dart';
 
 class OnlineSetupScreen extends StatefulWidget {
   const OnlineSetupScreen({super.key});
@@ -387,10 +388,22 @@ class _OnlineSetupScreenState extends State<OnlineSetupScreen> {
                   const SizedBox(height: 20),
                   GestureDetector(
                     onTap: () {
+                      PlayerColor hostColor;
+                      switch (_selectedColorIndex) {
+                        case 0: hostColor = PlayerColor.blue; break;
+                        case 1: hostColor = PlayerColor.red; break;
+                        case 2: hostColor = PlayerColor.green; break;
+                        case 3: hostColor = PlayerColor.yellow; break;
+                        default: hostColor = PlayerColor.blue;
+                      }
+                      
                       // Navigate to Lobby/Game with parameters
                       Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(builder: (context) => LobbyScreen(playerCount: _selectedPlayers)),
+                        MaterialPageRoute(builder: (context) => LobbyScreen(
+                          playerCount: _selectedPlayers,
+                          hostColor: hostColor,
+                        )),
                       );
                     },
                     child: _buildActionButton('Play'),

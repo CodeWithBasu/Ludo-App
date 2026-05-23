@@ -18,19 +18,32 @@ class GameState {
   });
 
   /// Factory to initialize a standard game state
-  factory GameState.initial({bool isSinglePlayer = false, int playerCount = 4}) {
+  factory GameState.initial({bool isSinglePlayer = false, int playerCount = 4, PlayerColor hostColor = PlayerColor.red}) {
     List<Player> players;
+    
     if (playerCount == 2) {
+      PlayerColor guestColor;
+      switch (hostColor) {
+        case PlayerColor.red: guestColor = PlayerColor.yellow; break;
+        case PlayerColor.yellow: guestColor = PlayerColor.red; break;
+        case PlayerColor.blue: guestColor = PlayerColor.green; break;
+        case PlayerColor.green: guestColor = PlayerColor.blue; break;
+      }
+      
       players = [
-        Player(id: '1', name: 'Player 1', color: PlayerColor.red),
-        Player(id: '2', name: 'Player 2', color: PlayerColor.yellow, isComputer: isSinglePlayer),
+        Player(id: '1', name: 'Player 1', color: hostColor),
+        Player(id: '2', name: 'Player 2', color: guestColor, isComputer: isSinglePlayer),
       ];
     } else {
+      // For 4 players, host is the selected color, others are added in fixed order
+      List<PlayerColor> allColors = [PlayerColor.red, PlayerColor.green, PlayerColor.yellow, PlayerColor.blue];
+      allColors.remove(hostColor);
+      
       players = [
-        Player(id: '1', name: 'Player 1', color: PlayerColor.red),
-        Player(id: '2', name: 'Player 2', color: PlayerColor.green, isComputer: isSinglePlayer),
-        Player(id: '3', name: 'Player 3', color: PlayerColor.yellow, isComputer: isSinglePlayer),
-        Player(id: '4', name: 'Player 4', color: PlayerColor.blue, isComputer: isSinglePlayer),
+        Player(id: '1', name: 'Player 1', color: hostColor),
+        Player(id: '2', name: 'Player 2', color: allColors[0], isComputer: isSinglePlayer),
+        Player(id: '3', name: 'Player 3', color: allColors[1], isComputer: isSinglePlayer),
+        Player(id: '4', name: 'Player 4', color: allColors[2], isComputer: isSinglePlayer),
       ];
     }
 
@@ -48,7 +61,7 @@ class GameState {
     return GameState(
       players: players,
       pawns: pawns,
-      currentTurn: PlayerColor.red,
+      currentTurn: hostColor,
     );
   }
 

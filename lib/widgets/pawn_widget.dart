@@ -21,47 +21,46 @@ class PawnWidget extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          boxShadow: [
-            // Strong drop shadow
-            BoxShadow(
-              color: Colors.black.withOpacity(0.5),
-              blurRadius: 5,
-              offset: const Offset(2, 4),
-            )
-          ],
-        ),
+      child: SizedBox(
+        width: size * 1.2,
+        height: size * 1.5,
         child: Stack(
+          alignment: Alignment.center,
+          clipBehavior: Clip.none,
           children: [
-            // Main 3D Sphere gradient
-            Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [lightColor, baseColor],
-                  center: const Alignment(-0.3, -0.4),
-                  radius: 0.8,
-                ),
-                border: Border.all(color: Colors.white, width: 2),
-              ),
+            // Shadow
+            Positioned(
+              top: 4, left: 2,
+              child: Icon(Icons.location_on, color: Colors.black.withOpacity(0.6), size: size * 1.2),
             ),
-            // Glossy plastic highlight
+            // White Outer Pin
+            Icon(Icons.location_on, color: Colors.white, size: size * 1.2),
+            // Colored Inner Pin
             Positioned(
               top: size * 0.1,
-              left: size * 0.15,
+              child: ShaderMask(
+                shaderCallback: (Rect bounds) {
+                  return LinearGradient(
+                    colors: [lightColor, baseColor],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ).createShader(bounds);
+                },
+                child: Icon(Icons.location_on, color: Colors.white, size: size * 0.95),
+              ),
+            ),
+            // Dark Center Dot
+            Positioned(
+              top: size * 0.35,
               child: Container(
-                width: size * 0.4,
-                height: size * 0.2,
+                width: size * 0.3,
+                height: size * 0.3,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.6),
-                  borderRadius: BorderRadius.all(Radius.elliptical(size * 0.4, size * 0.2)),
-                  // Rotate slightly for curved reflection
+                  color: baseColor.withOpacity(0.8),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.black26, width: 1),
+                  boxShadow: const [BoxShadow(color: Colors.white54, blurRadius: 2, inset: true)],
                 ),
-                transform: Matrix4.rotationZ(-0.3),
               ),
             ),
           ],

@@ -9,7 +9,7 @@ import 'package:ludo_app/logic/path_coordinates.dart';
 import 'package:ludo_app/widgets/board_widget.dart';
 import 'package:ludo_app/widgets/pawn_widget.dart';
 import 'package:ludo_app/widgets/dice_widget.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ludo_app/services/firebase_service.dart';
 
 class GameScreen extends StatefulWidget {
@@ -18,6 +18,7 @@ class GameScreen extends StatefulWidget {
   final String? roomCode;
   final bool isHost;
   final int playerCount;
+  final PlayerColor hostColor;
 
   const GameScreen({
     super.key, 
@@ -26,6 +27,7 @@ class GameScreen extends StatefulWidget {
     this.roomCode,
     this.isHost = true,
     this.playerCount = 4,
+    this.hostColor = PlayerColor.red,
   });
 
   @override
@@ -40,6 +42,10 @@ class _GameScreenState extends State<GameScreen> {
   final GlobalKey<DiceWidgetState> _diceKey = GlobalKey<DiceWidgetState>();
 
   StreamSubscription? _gameStateSubscription;
+  
+  String _hostName = 'Player 1';
+  int _hostAvatar = 0;
+  String _hostCountry = 'IN';
 
   @override
   void initState() {
@@ -47,6 +53,7 @@ class _GameScreenState extends State<GameScreen> {
     _gameState = GameState.initial(
       isSinglePlayer: widget.isSinglePlayer, 
       playerCount: widget.playerCount,
+      hostColor: widget.hostColor,
     );
     
     if (widget.isOnline && widget.roomCode != null) {
@@ -59,6 +66,18 @@ class _GameScreenState extends State<GameScreen> {
       });
     } else {
       _checkAITurn();
+    }
+    _loadHostProfile();
+  }
+
+  Future<void> _loadHostProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _hostName = prefs.getString('profile_name') ?? 'Player 1';
+        _hostAvatar = prefs.getInt('profile_avatar') ?? 0;
+        _hostCountry = prefs.getString('profile_country') ?? 'IN';
+      });
     }
   }
 
@@ -182,19 +201,19 @@ class _GameScreenState extends State<GameScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF001F54), // Dark blue ludo background
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF00C9FF), Color(0xFF92FE9D)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: const NetworkImage('https://i.pinimg.com/736x/87/44/1a/87441a12903ea29e06cd2e519c72e212.jpg'), // Pattern background
+            fit: BoxFit.cover,
+            colorFilter: ColorFilter.mode(Colors.blue.withOpacity(0.2), BlendMode.dstATop),
           ),
         ),
         child: SafeArea(
           child: Column(
             children: [
               _buildAppBar(),
-              _buildPlayerInfo(),
               Expanded(
                 child: Center(
                   child: Padding(
@@ -230,7 +249,7 @@ class _GameScreenState extends State<GameScreen> {
                   ),
                 ),
               ),
-              _buildDiceSection(),
+              _buildBottomBar(),
             ],
           ),
         ),
@@ -314,85 +333,123 @@ class _GameScreenState extends State<GameScreen> {
     return pawnWidgets;
   }
 
-  Widget _buildPlayerInfo() {
+  Widget _buildBottomBar() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(12.0),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.5), width: 1.5),
+        color: const Color(0xFF0A2E6E),
+        border: Border(top: BorderSide(color: Colors.amber.shade200, width: 2)),
+        boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 10, offset: Offset(0, -5))],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text(
-            'CURRENT TURN: ',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              color: _getColor(_gameState.currentTurn),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
-            ),
-            child: Text(
-              _gameState.currentTurn.name.toUpperCase(),
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                letterSpacing: 1,
+      child: _gameState.players.length == 2
+          ? Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildPlayerProfile(_gameState.players[0], true),
+                _buildCenterDice(),
+                _buildPlayerProfile(_gameState.players[1], false),
+              ],
+            )
+          : SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  ..._gameState.players.map((p) => Padding(padding: const EdgeInsets.only(right: 8), child: _buildPlayerProfile(p, p.id == '1'))),
+                  _buildCenterDice(),
+                ],
               ),
             ),
+    );
+  }
+
+  Widget _buildPlayerProfile(Player player, bool isHost) {
+    bool isActive = _gameState.currentTurn == player.color;
+    
+    String name = isHost ? _hostName : 'Opponent';
+    String country = isHost ? _hostCountry : 'KR';
+    int coins = isHost ? 1985 : 9387;
+    String avatarUrl = isHost 
+        ? 'https://cdn-icons-png.flaticon.com/512/4140/41400$(_hostAvatar + 47).png'
+        : 'https://cdn-icons-png.flaticon.com/512/4140/4140048.png';
+
+    return Container(
+      width: 130,
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: isActive ? Colors.green.withOpacity(0.3) : Colors.transparent,
+        border: isActive ? Border.all(color: Colors.greenAccent, width: 2) : Border.all(color: Colors.transparent, width: 2),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 60, height: 60,
+                decoration: BoxDecoration(
+                  border: Border.all(color: _getColor(player.color), width: 3),
+                  borderRadius: BorderRadius.circular(8),
+                  image: DecorationImage(image: NetworkImage(avatarUrl), fit: BoxFit.cover),
+                  color: Colors.white,
+                ),
+              ),
+              Positioned(
+                bottom: -5, right: -5,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4)),
+                  child: Text(country, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12), overflow: TextOverflow.ellipsis),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.monetization_on, color: Colors.amber, size: 14),
+              const SizedBox(width: 4),
+              Text('$coins', style: const TextStyle(color: Colors.amber, fontSize: 12, fontWeight: FontWeight.bold)),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDiceSection() {
+  Widget _buildCenterDice() {
     return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(20.0),
+      width: 80, height: 80,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
+        color: _getColor(_gameState.currentTurn).withOpacity(0.2),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _getColor(_gameState.currentTurn), width: 3),
+        boxShadow: [
+          BoxShadow(
+            color: _getColor(_gameState.currentTurn).withOpacity(0.5),
+            blurRadius: 15,
+            spreadRadius: 2,
+          )
+        ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      child: Stack(
+        alignment: Alignment.center,
         children: [
           DiceWidget(
             key: _diceKey,
             value: _gameState.diceValue,
             onRoll: _rollDice,
             color: _getColor(_gameState.currentTurn),
-            enabled: !_gameState.diceRolled,
+            enabled: !_gameState.diceRolled && _isMyTurn,
           ),
-          Container(
-            decoration: BoxDecoration(
-              boxShadow: [
-                BoxShadow(
-                  color: _getColor(_gameState.currentTurn).withOpacity(0.4),
-                  blurRadius: 15,
-                  offset: const Offset(0, 8),
-                )
-              ],
+          if (!_isMyTurn && !_gameState.diceRolled)
+            const Positioned(
+              bottom: 4,
+              child: Text('WAIT', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10)),
             ),
-            child: ElevatedButton(
-              onPressed: (_gameState.diceRolled || !_isMyTurn) ? null : _rollDice,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-                backgroundColor: _getColor(_gameState.currentTurn),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                elevation: 0, // handeled by container shadow
-              ),
-              child: Text(_isMyTurn ? 'ROLL DICE' : 'WAIT', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 1)),
-            ),
-          ),
         ],
       ),
     );
