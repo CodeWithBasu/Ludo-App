@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ludo_app/screens/game_screen.dart';
 import 'package:ludo_app/screens/lobby_screen.dart';
 import 'package:ludo_app/screens/profile_screen.dart';
+import 'package:ludo_app/screens/online_setup_screen.dart';
 import 'package:ludo_app/services/auth_service.dart';
 
 class MainMenuScreen extends StatefulWidget {
@@ -340,7 +341,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> with SingleTickerProvid
                   icon: Icons.language,
                   color: Colors.purpleAccent,
                   onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const LobbyScreen()));
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const OnlineSetupScreen()));
                   },
                 ),
               ),
