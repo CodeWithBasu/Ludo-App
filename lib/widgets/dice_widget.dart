@@ -57,8 +57,8 @@ class DiceWidgetState extends State<DiceWidget> with SingleTickerProviderStateMi
         builder: (context, child) {
           // Bouncy 3D rotation effect
           final progress = _controller.value;
-          final angleX = progress * pi * 4; // spin twice
-          final angleY = progress * pi * 2;
+          final angleX = _controller.isAnimating ? progress * pi * 4 : 0.4;
+          final angleY = _controller.isAnimating ? progress * pi * 2 : -0.4;
           
           // Bouncy scale: start at 1, go up to 1.3, back to 1
           final scale = 1.0 + sin(progress * pi) * 0.3;
@@ -111,9 +111,7 @@ class DiceWidgetState extends State<DiceWidget> with SingleTickerProviderStateMi
           ),
         ],
       ),
-      child: val == 0 
-          ? const Center(child: Icon(Icons.help_outline, color: Colors.white, size: 40)) 
-          : _buildDots(val),
+      child: _buildDots(val == 0 ? 6 : val),
     );
   }
 

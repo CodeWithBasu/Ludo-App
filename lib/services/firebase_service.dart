@@ -7,13 +7,13 @@ class FirebaseService {
   static final FirebaseDatabase _db = FirebaseDatabase.instance;
   
   /// Creates a new room and returns the 6-digit room code
-  static Future<String> createRoom(String hostName) async {
+  static Future<String> createRoom(String hostName, int playerCount, PlayerColor hostColor) async {
     String roomCode = _generateRoomCode();
     
-    // Initial state with host as Player 1 (Red)
-    GameState initialState = GameState.initial(isSinglePlayer: false);
+    // Initial state with dynamic host settings
+    GameState initialState = GameState.initial(isSinglePlayer: false, playerCount: playerCount, hostColor: hostColor);
     // Since it's online, we can update the first player's name
-    initialState.players[0] = Player(id: 'host', name: hostName, color: PlayerColor.red);
+    initialState.players[0] = Player(id: 'host', name: hostName, color: hostColor);
     
     await _db.ref('rooms/$roomCode').set({
       'host': hostName,
@@ -42,7 +42,9 @@ class FirebaseService {
         DatabaseEvent stateEvent = await _db.ref('rooms/$roomCode/state').once();
         if (stateEvent.snapshot.exists) {
            GameState state = GameState.fromJson(stateEvent.snapshot.value as Map);
-           state.players[1] = Player(id: 'guest', name: guestName, color: PlayerColor.green);
+           if (state.players.length > 1) {
+             state.players[1] = Player(id: 'guest', name: guestName, color: state.players[1].color);
+           }
            await updateGameState(roomCode, state);
         }
         return true;

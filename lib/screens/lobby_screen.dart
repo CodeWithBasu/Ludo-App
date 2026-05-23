@@ -27,7 +27,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
     setState(() => _isLoading = true);
     
     try {
-      String code = await FirebaseService.createRoom(_nameController.text.trim());
+      String code = await FirebaseService.createRoom(_nameController.text.trim(), widget.playerCount, widget.hostColor);
       setState(() {
         _hostedRoomCode = code;
         _isLoading = false;

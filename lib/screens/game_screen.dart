@@ -306,8 +306,8 @@ class _GameScreenState extends State<GameScreen> {
            }
         }
 
-        double x = gridCoords[0] * cellSize + (cellSize * 0.15); // Offset to center pawn
-        double y = gridCoords[1] * cellSize + (cellSize * 0.15);
+        double x = gridCoords[0] * cellSize + (cellSize * 0.1); // Offset to center location pin
+        double y = gridCoords[1] * cellSize - (cellSize * 0.25);
 
         // Adjust slightly if at home to cluster them
         if (pawn.state == PawnState.atHome) {
