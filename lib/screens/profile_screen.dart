@@ -52,20 +52,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadProfile() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _selectedAvatar = prefs.getInt('profile_avatar') ?? 0;
-      _playerName = prefs.getString('profile_name') ?? 'Basudev';
-      _selectedCountry = prefs.getString('profile_country') ?? '🇮🇳 India';
-      _isLoading = false;
-    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      setState(() {
+        _selectedAvatar = prefs.getInt('profile_avatar') ?? 0;
+        _playerName = prefs.getString('profile_name') ?? 'Basudev';
+        _selectedCountry = prefs.getString('profile_country') ?? '🇮🇳 India';
+        _isLoading = false;
+      });
+    } catch (e) {
+      // If SharedPreferences fails (e.g. native plugin not yet registered),
+      // fall back to defaults so the screen still loads.
+      setState(() {
+        _selectedAvatar = 0;
+        _playerName = 'Basudev';
+        _selectedCountry = '🇮🇳 India';
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _saveProfile() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('profile_avatar', _selectedAvatar);
-    await prefs.setString('profile_name', _playerName);
-    await prefs.setString('profile_country', _selectedCountry);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('profile_avatar', _selectedAvatar);
+      await prefs.setString('profile_name', _playerName);
+      await prefs.setString('profile_country', _selectedCountry);
+    } catch (e) {
+      // Silently ignore save errors
+    }
   }
 
   void _showAvatarPicker() {
