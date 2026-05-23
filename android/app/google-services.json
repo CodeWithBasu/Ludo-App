@@ -13,7 +13,20 @@
           "package_name": "com.example.ludo_app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "817960805175-1r2nh4b9m4hgfr9sr29ljbram7cvvicp.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.ludo_app",
+            "certificate_hash": "bbf28d86a546881c6cb754a2455b6fe3f0238e83"
+          }
+        },
+        {
+          "client_id": "817960805175-eh1bmam7vm782jugokckbp6ucp591k4i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyC4S72UWA6IPOctwK_9EaccjQAoMqZpraA"
@@ -21,7 +34,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "817960805175-eh1bmam7vm782jugokckbp6ucp591k4i.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "817960805175-q5vovfi8ba0uandpn3bvmus660gkl78r.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.ludoApp"
+              }
+            }
+          ]
         }
       }
     }

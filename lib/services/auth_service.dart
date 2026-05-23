@@ -7,7 +7,11 @@ class AuthService {
   AuthService._internal();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  // Explicitly passing the Web client ID from google-services.json as serverClientId
+  // helps prevent DEVELOPER_ERROR / "Sign in cancelled" on Android.
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    serverClientId: '817960805175-eh1bmam7vm782jugokckbp6ucp591k4i.apps.googleusercontent.com',
+  );
 
   /// Returns the currently signed-in Firebase user, or null.
   User? get currentUser => _auth.currentUser;
